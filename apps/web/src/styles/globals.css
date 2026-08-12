@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4's automatic source detection skips anything resolved through
+ * node_modules — including pnpm's symlinked workspace packages. Without
+ * this, every class used inside @algoviz/ui's components (imported here as
+ * "@algoviz/ui" -> node_modules/@algoviz/ui -> ../../packages/ui) is
+ * silently dropped from the generated stylesheet. Add each first-party
+ * workspace package that contains Tailwind-classed source explicitly.
+ */
+@source "../../../../packages/ui/src";
+
+@theme {
+  --color-bg: #0b0f19;
+  --color-surface: #131a2a;
+  --color-surface-alt: #1b2438;
+  --color-border: #2a3550;
+  --color-accent: #6366f1;
+  --color-accent-2: #22d3ee;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: #e5e9f5;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
