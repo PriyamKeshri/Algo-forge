@@ -62,8 +62,16 @@ const VARIANT_LABEL: Record<LinkedListSnapshot["variant"], string> = {
   circular: "Circular",
 };
 
+/** Above this count, per-node value labels, the head/circular tags, and the
+    → arrows between nodes are all dropped — same "the row runs out of room
+    for the extras well before it runs out of room for the boxes themselves"
+    reasoning as ArrayRenderer/StackRenderer. A hover title still shows the
+    exact value. */
+const DENSE_THRESHOLD = 20;
+
 export function LinkedListRenderer({ structure, activeEvent }: StructureRendererProps<LinkedListSnapshot>) {
   const nodes = orderedNodes(structure);
+  const dense = nodes.length > DENSE_THRESHOLD;
 
   if (nodes.length === 0) {
     return (
@@ -79,21 +87,30 @@ export function LinkedListRenderer({ structure, activeEvent }: StructureRenderer
       <div className="mb-2 text-xs tabular-nums text-slate-500">
         {VARIANT_LABEL[structure.variant]} · {nodes.length} node{nodes.length === 1 ? "" : "s"}
       </div>
-      <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+      {/* overflow-hidden (not overflow-x-auto): each node cell below is
+          flex-1, so the whole list always divides this container's fixed
+          width between however many nodes there are — it never needs to
+          scroll, and boxes never spill past the border. */}
+      <div className={`flex min-w-0 flex-1 items-center overflow-hidden ${dense ? "gap-px" : "gap-1"}`}>
         {nodes.map((node, index) => {
           const role = roleFor(node.id, Boolean(node.visited), activeEvent);
           const isLast = index === nodes.length - 1;
           return (
-            <div key={node.id} className="flex flex-shrink-0 items-center gap-1">
-              {index === 0 && <span className="text-[10px] uppercase tracking-wide text-slate-500">head</span>}
+            // min-w-0 overrides flexbox's default min-width: auto, which
+            // otherwise floors each cell at its content's intrinsic width
+            // (the arrow/label) no matter how much flex-1 wants to shrink
+            // it — same reasoning as ArrayRenderer's own min-w-0 note.
+            <div key={node.id} className="flex min-w-0 flex-1 items-center gap-1">
+              {index === 0 && !dense && <span className="text-[10px] uppercase tracking-wide text-slate-500">head</span>}
               <div
-                className={`flex h-9 w-16 flex-shrink-0 items-center justify-center rounded border text-sm font-medium tabular-nums text-white transition-all duration-150 ${BOX_CLASSES[role]}`}
+                className={`h-9 min-w-0 flex-1 rounded border text-sm font-medium tabular-nums text-white transition-all duration-150 ${BOX_CLASSES[role]} ${dense ? "" : "flex items-center justify-center"}`}
+                title={dense ? String(node.value) : undefined}
               >
-                {node.value}
+                {!dense && node.value}
               </div>
-              {!isLast && <span className="text-slate-500">→</span>}
-              {isLast && structure.variant === "circular" && (
-                <span className="text-xs text-slate-500">↻ head</span>
+              {!isLast && !dense && <span className="flex-shrink-0 text-slate-500">→</span>}
+              {isLast && structure.variant === "circular" && !dense && (
+                <span className="flex-shrink-0 text-xs text-slate-500">↻ head</span>
               )}
             </div>
           );
