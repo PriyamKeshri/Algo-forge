@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import type { AlgorithmMetadata } from "@algoviz/core";
 import { algorithmRegistry } from "@algoviz/algorithms";
 import { AlgorithmCard } from "../components/AlgorithmCard";
@@ -53,9 +54,17 @@ export function HomePage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 p-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-white">⚒️ AlgoForge — Algorithm Laboratory</h1>
-        <p className="text-sm text-slate-400">Pick an algorithm to explore it, one step at a time</p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">⚒️ AlgoForge — Algorithm Laboratory</h1>
+          <p className="text-sm text-slate-400">Pick an algorithm to explore it, one step at a time</p>
+        </div>
+        <Link
+          to="/race"
+          className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-white hover:bg-surface-alt sm:self-auto"
+        >
+          🏁 Algorithm Race
+        </Link>
       </header>
 
       {CATEGORY_ORDER.filter((category) => (grouped.get(category)?.length ?? 0) > 0).map((category) => (
