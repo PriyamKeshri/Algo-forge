@@ -3,11 +3,15 @@ import { createInstrumentedTree, ExecutionEngine } from "@algoviz/engine";
 import type { ArrayInput, NodeId, TreeSnapshot, VisitNodeEvent } from "@algoviz/core";
 import { bstInsertPlugin } from "./bst-insert";
 import { inorderTraversalPlugin } from "./inorder-traversal";
+import { preorderTraversalPlugin } from "./preorder-traversal";
+import { postorderTraversalPlugin } from "./postorder-traversal";
 import type { TreePlugin } from "../registry";
 
 const plugins: Array<{ name: string; plugin: TreePlugin }> = [
   { name: "BST Insert", plugin: bstInsertPlugin },
   { name: "Inorder Traversal", plugin: inorderTraversalPlugin },
+  { name: "Preorder Traversal", plugin: preorderTraversalPlugin },
+  { name: "Postorder Traversal", plugin: postorderTraversalPlugin },
 ];
 
 // A sourceLine-tagged line should always be part of an instrumented
@@ -120,6 +124,81 @@ describe("Inorder Traversal specifically", () => {
   it("visits every node exactly once", () => {
     const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
     const result = runPlugin(inorderTraversalPlugin, values);
+    const visitedIds = result.events.filter(isVisitNode).map((ev) => ev.nodeId);
+    expect(new Set(visitedIds).size).toBe(visitedIds.length);
+    expect(visitedIds).toHaveLength(new Set(values).size);
+  });
+});
+
+/**
+ * Shared by the Preorder/Postorder blocks below: neither traversal's
+ * "every node visited exactly once" property is order-sensitive (Inorder's
+ * own version above already covers that shape of check), so what's
+ * actually distinctive about each is *when* a node is visited relative to
+ * its children — this builds a nodeId -> visit-index lookup so both blocks
+ * can assert that directly instead of re-deriving it from scratch.
+ */
+function visitIndexOf(result: ReturnType<typeof runPlugin>): Map<NodeId, number> {
+  const visitedIds = result.events.filter(isVisitNode).map((ev) => ev.nodeId);
+  return new Map(visitedIds.map((id, index) => [id, index]));
+}
+
+describe("Preorder Traversal specifically", () => {
+  it("visits every node before either of its children", () => {
+    const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
+    const result = runPlugin(preorderTraversalPlugin, values);
+    const tree = result.finalSnapshot as TreeSnapshot<number>;
+    const index = visitIndexOf(result);
+
+    for (const [id, node] of Object.entries(tree.nodes)) {
+      const own = index.get(id as NodeId)!;
+      if (node.left !== undefined) expect(own).toBeLessThan(index.get(node.left)!);
+      if (node.right !== undefined) expect(own).toBeLessThan(index.get(node.right)!);
+    }
+  });
+
+  it("visits the root first", () => {
+    const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
+    const result = runPlugin(preorderTraversalPlugin, values);
+    const tree = result.finalSnapshot as TreeSnapshot<number>;
+    const visitedIds = result.events.filter(isVisitNode).map((ev) => ev.nodeId);
+    expect(visitedIds[0]).toBe(tree.rootId);
+  });
+
+  it("visits every node exactly once", () => {
+    const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
+    const result = runPlugin(preorderTraversalPlugin, values);
+    const visitedIds = result.events.filter(isVisitNode).map((ev) => ev.nodeId);
+    expect(new Set(visitedIds).size).toBe(visitedIds.length);
+    expect(visitedIds).toHaveLength(new Set(values).size);
+  });
+});
+
+describe("Postorder Traversal specifically", () => {
+  it("visits every node after both of its children", () => {
+    const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
+    const result = runPlugin(postorderTraversalPlugin, values);
+    const tree = result.finalSnapshot as TreeSnapshot<number>;
+    const index = visitIndexOf(result);
+
+    for (const [id, node] of Object.entries(tree.nodes)) {
+      const own = index.get(id as NodeId)!;
+      if (node.left !== undefined) expect(own).toBeGreaterThan(index.get(node.left)!);
+      if (node.right !== undefined) expect(own).toBeGreaterThan(index.get(node.right)!);
+    }
+  });
+
+  it("visits the root last", () => {
+    const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
+    const result = runPlugin(postorderTraversalPlugin, values);
+    const tree = result.finalSnapshot as TreeSnapshot<number>;
+    const visitedIds = result.events.filter(isVisitNode).map((ev) => ev.nodeId);
+    expect(visitedIds[visitedIds.length - 1]).toBe(tree.rootId);
+  });
+
+  it("visits every node exactly once", () => {
+    const values = [7, 2, 9, 4, 4, 1, 8, 3, 6, 0];
+    const result = runPlugin(postorderTraversalPlugin, values);
     const visitedIds = result.events.filter(isVisitNode).map((ev) => ev.nodeId);
     expect(new Set(visitedIds).size).toBe(visitedIds.length);
     expect(visitedIds).toHaveLength(new Set(values).size);

@@ -72,7 +72,7 @@ export function TreeRenderer({ structure, activeEvent }: StructureRendererProps<
   if (rootId === null) {
     return (
       <div className="flex h-72 items-center justify-center rounded-lg border border-border bg-surface text-sm text-slate-500">
-        Empty tree — run BST Insert or Inorder Traversal to build one
+        Empty tree — run a Tree algorithm to build one
       </div>
     );
   }
