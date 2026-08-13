@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { edgeId, nodeId, type GraphInput } from "@algoviz/core";
-import { addEdge, addNode, clearGraph, deleteEdge, deleteNode, moveNode, setStartNode } from "./graph-editor-logic";
+import {
+  addEdge,
+  addNode,
+  clearGraph,
+  deleteEdge,
+  deleteNode,
+  moveNode,
+  setEndNode,
+  setStartNode,
+} from "./graph-editor-logic";
 
 const empty: GraphInput = { kind: "graph", nodes: [], edges: [], startNodeId: undefined };
 
@@ -102,6 +111,25 @@ describe("deleteNode", () => {
     const result = deleteNode(g, other.id);
     expect(result.startNodeId).toBe(start);
   });
+
+  it("clears endNodeId if it pointed at the deleted node", () => {
+    let g = addNode(empty, { x: 0, y: 0 });
+    g = addNode(g, { x: 1, y: 1 });
+    const end = g.nodes[1]!.id;
+    g = setEndNode(g, end);
+    const result = deleteNode(g, end);
+    expect(result.endNodeId).toBeUndefined();
+  });
+
+  it("leaves endNodeId untouched if a different node is deleted", () => {
+    let g = addNode(empty, { x: 0, y: 0 });
+    g = addNode(g, { x: 1, y: 1 });
+    g = addNode(g, { x: 2, y: 2 });
+    const end = g.nodes[1]!.id;
+    g = setEndNode(g, end);
+    const result = deleteNode(g, g.nodes[2]!.id);
+    expect(result.endNodeId).toBe(end);
+  });
 });
 
 describe("deleteEdge", () => {
@@ -141,8 +169,24 @@ describe("setStartNode", () => {
   });
 });
 
+describe("setEndNode", () => {
+  it("sets endNodeId to the given node, independent of startNodeId", () => {
+    let g = addNode(empty, { x: 0, y: 0 }); // becomes start automatically
+    g = addNode(g, { x: 1, y: 1 });
+    const second = g.nodes[1]!.id;
+    const result = setEndNode(g, second);
+    expect(result.endNodeId).toBe(second);
+    expect(result.startNodeId).toBe(g.startNodeId);
+  });
+
+  it("can target a node id even if it doesn't (yet) exist — pure function, no validation", () => {
+    const result = setEndNode(empty, nodeId("phantom"));
+    expect(result.endNodeId).toBe("phantom");
+  });
+});
+
 describe("clearGraph", () => {
-  it("returns an empty graph with no start node", () => {
-    expect(clearGraph()).toEqual({ kind: "graph", nodes: [], edges: [], startNodeId: undefined });
+  it("returns an empty graph with no start or end node", () => {
+    expect(clearGraph()).toEqual({ kind: "graph", nodes: [], edges: [], startNodeId: undefined, endNodeId: undefined });
   });
 });

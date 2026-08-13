@@ -103,6 +103,7 @@ function* weightedWalk(graph: InstrumentedGraph): AlgorithmGenerator {
   yield graph.updateNodeValue(nodeId("n0"), 0);
   yield graph.updateNodeValue(nodeId("n1"), 5);
   yield graph.rejectEdge(edgeId("e2"));
+  yield graph.highlightPath([nodeId("n0"), nodeId("n1")], [edgeId("e1")]);
 }
 
 function runWeightedWalk() {
@@ -317,11 +318,19 @@ describe("graph replay (visit-node/traverse-edge as mutating events)", () => {
     expect(structure.nodes.find((n) => n.id === "n0")?.value).toBe(0);
     expect(structure.nodes.find((n) => n.id === "n1")?.value).toBe(5);
     expect(structure.edges.find((e) => e.id === "e2")?.rejected).toBe(true);
+    // highlight-path: both endpoints of the (single) highlighted edge get
+    // onPath, the untouched third node (n2) doesn't.
+    expect(structure.nodes.find((n) => n.id === "n0")?.onPath).toBe(true);
+    expect(structure.nodes.find((n) => n.id === "n1")?.onPath).toBe(true);
+    expect(structure.nodes.find((n) => n.id === "n2")?.onPath).toBeFalsy();
+    expect(structure.edges.find((e) => e.id === "e1")?.onPath).toBe(true);
+    expect(structure.edges.find((e) => e.id === "e2")?.onPath).toBeFalsy();
     // Cross-check against the live engine's own idea of the same values.
     expect(structure.nodes.find((n) => n.id === "n0")?.value).toBe(liveSnapshot.nodes.find((n) => n.id === "n0")?.value);
     expect(structure.edges.find((e) => e.id === "e2")?.rejected).toBe(
       liveSnapshot.edges.find((e) => e.id === "e2")?.rejected,
     );
+    expect(structure.nodes.find((n) => n.id === "n0")?.onPath).toBe(liveSnapshot.nodes.find((n) => n.id === "n0")?.onPath);
   });
 });
 

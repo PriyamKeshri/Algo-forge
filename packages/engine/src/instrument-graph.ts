@@ -3,6 +3,7 @@ import type {
   GraphEdge,
   GraphNode,
   GraphSnapshot,
+  HighlightPathEvent,
   NodeId,
   RejectEdgeEvent,
   TraverseEdgeEvent,
@@ -36,6 +37,8 @@ export interface InstrumentedGraph {
   updateNodeValue(nodeId: NodeId, value: number, meta?: EventMeta): UpdateNodeValueEvent;
   /** Kruskal's only — see RejectEdgeEvent's doc comment. */
   rejectEdge(edgeId: EdgeId, meta?: EventMeta): RejectEdgeEvent;
+  /** Dijkstra/Prim's/Kruskal's, only when `GraphInput.endNodeId` is set — see HighlightPathEvent's doc comment. */
+  highlightPath(nodeIds: NodeId[], edgeIds: EdgeId[], meta?: EventMeta): HighlightPathEvent;
   snapshot(): GraphSnapshot;
 }
 
@@ -140,6 +143,12 @@ export function createInstrumentedGraph(
       const edge = requireEdge(edgeId, "rejectEdge");
       edge.rejected = true;
       return { type: "reject-edge", step: nextStep(), edgeId, ...meta };
+    },
+
+    highlightPath(nodeIds, edgeIds, meta) {
+      for (const id of nodeIds) requireNode(id, "highlightPath").onPath = true;
+      for (const id of edgeIds) requireEdge(id, "highlightPath").onPath = true;
+      return { type: "highlight-path", step: nextStep(), nodeIds, edgeIds, ...meta };
     },
 
     snapshot(): GraphSnapshot {

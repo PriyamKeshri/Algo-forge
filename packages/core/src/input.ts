@@ -16,6 +16,18 @@ export interface GraphInput {
   edges: GraphEdge[];
   /** Traversal algorithms (BFS/DFS) start here; algorithms that don't need one (e.g. a future "count components") can ignore it. */
   startNodeId?: NodeId;
+  /**
+   * Optional target node — when set (and reachable), Dijkstra/Prim's/
+   * Kruskal's each emit one `HighlightPathEvent` at the end of their run
+   * marking the path connecting `startNodeId` to this node. For Dijkstra
+   * that path is a genuine shortest path (what the algorithm computes
+   * anyway); for Prim's/Kruskal's it's the unique path *within the
+   * resulting minimum spanning tree*, which is generally NOT the shortest
+   * path in the original graph — an MST minimizes total edge weight to
+   * connect every node, not the cost between any two particular ones.
+   * BFS/DFS ignore this the same way they ignore edge weight.
+   */
+  endNodeId?: NodeId;
   seed?: number;
 }
 

@@ -87,6 +87,12 @@ export function generateRandomGraph(options: GenerateGraphOptions): GraphInput {
     nodes,
     edges,
     startNodeId: size > 0 ? nodeId("n0") : undefined,
+    // Defaults to the "farthest around the circle" node from the start —
+    // just so Dijkstra/Prim's/Kruskal's have *some* start/end pair to
+    // demo the path highlight with immediately; BFS/DFS ignore this
+    // entirely, same as they ignore edge weight. Freely reassignable
+    // afterward via the editor's own end-node picker.
+    endNodeId: size > 1 ? nodeId(`n${size - 1}`) : undefined,
     seed,
   };
 }

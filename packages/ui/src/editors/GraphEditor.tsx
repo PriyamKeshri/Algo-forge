@@ -1,6 +1,15 @@
 import { useRef, useState } from "react";
 import { nodeId as toNodeId, type EdgeId, type GraphInput, type NodeId } from "@algoviz/core";
-import { addEdge, addNode, deleteEdge, deleteNode, moveNode, setEdgeWeight, setStartNode } from "./graph-editor-logic";
+import {
+  addEdge,
+  addNode,
+  deleteEdge,
+  deleteNode,
+  moveNode,
+  setEdgeWeight,
+  setEndNode,
+  setStartNode,
+} from "./graph-editor-logic";
 
 export interface GraphEditorProps {
   input: GraphInput;
@@ -37,13 +46,20 @@ type Pending = { nodeId: NodeId; startX: number; startY: number } | null;
  *   - mousedown on empty canvas, mouseup without much movement -> add a node there
  *   - mousedown on a node, mouseup on a *different* node        -> connect them
  *   - mousedown on a node, mouseup on empty space after a drag  -> move that node
- *   - mousedown on a node, mouseup without much movement        -> set it as the start node
+ *   - mousedown on a node, mouseup without much movement        -> set it as the start (or end) node, per `pickMode` below
  *   - right-click a node or edge                                -> delete it
  */
 export function GraphEditor({ input, onChange, weighted = false }: GraphEditorProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [pending, setPending] = useState<Pending>(null);
   const [ghostPoint, setGhostPoint] = useState<{ x: number; y: number } | null>(null);
+  // Only Dijkstra/Prim's/Kruskal's (weighted=true) have any use for an end
+  // node — BFS/DFS never read `endNodeId`, so this toggle (and end-node
+  // picking entirely) stays hidden for them, same as the edge-weight
+  // prompt already does. A plain click always sets the start node when
+  // this is "start" (unconditionally true whenever the toggle itself is
+  // hidden), and the end node when it's "end".
+  const [pickMode, setPickMode] = useState<"start" | "end">("start");
 
   function toSvgPoint(clientX: number, clientY: number): { x: number; y: number } {
     const svg = svgRef.current;
@@ -88,7 +104,7 @@ export function GraphEditor({ input, onChange, weighted = false }: GraphEditorPr
       const weight = weighted ? promptForWeight(1) : undefined;
       onChange(addEdge(input, pending.nodeId, toNodeId(targetNodeId), weight));
     } else if (!dragged) {
-      onChange(setStartNode(input, pending.nodeId));
+      onChange(weighted && pickMode === "end" ? setEndNode(input, pending.nodeId) : setStartNode(input, pending.nodeId));
     } else {
       onChange(moveNode(input, pending.nodeId, toSvgPoint(event.clientX, event.clientY)));
     }
@@ -117,6 +133,29 @@ export function GraphEditor({ input, onChange, weighted = false }: GraphEditorPr
 
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
+      {weighted && (
+        <div className="mb-2 flex items-center gap-2 text-xs">
+          <span className="text-slate-500">Clicking a node sets it as:</span>
+          <button
+            type="button"
+            onClick={() => setPickMode("start")}
+            className={`rounded-full border px-2.5 py-1 ${
+              pickMode === "start" ? "border-accent-2 bg-accent-2/20 text-accent-2" : "border-border text-slate-400 hover:bg-surface-alt"
+            }`}
+          >
+            ● Start
+          </button>
+          <button
+            type="button"
+            onClick={() => setPickMode("end")}
+            className={`rounded-full border px-2.5 py-1 ${
+              pickMode === "end" ? "border-success bg-success/20 text-success" : "border-border text-slate-400 hover:bg-surface-alt"
+            }`}
+          >
+            ● End
+          </button>
+        </div>
+      )}
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
@@ -179,6 +218,11 @@ export function GraphEditor({ input, onChange, weighted = false }: GraphEditorPr
           {input.nodes.map((node) => {
             const pos = node.position ?? { x: VIEW_SIZE / 2, y: VIEW_SIZE / 2 };
             const isStart = node.id === input.startNodeId;
+            // A node being both start and end (a trivial single-node
+            // "path") is legal — start's color wins visually in that rare
+            // case; the label text next to the toggle above is the source
+            // of truth either way, this is just a quick-glance cue.
+            const isEnd = !isStart && weighted && node.id === input.endNodeId;
             return (
               <g key={node.id}>
                 <circle
@@ -186,8 +230,14 @@ export function GraphEditor({ input, onChange, weighted = false }: GraphEditorPr
                   cx={pos.x}
                   cy={pos.y}
                   r={NODE_RADIUS}
-                  className={`cursor-grab ${isStart ? "fill-accent-2 stroke-accent-2" : "fill-surface-alt stroke-border"} hover:stroke-danger active:cursor-grabbing`}
-                  strokeWidth={isStart ? 3 : 2}
+                  className={`cursor-grab ${
+                    isStart
+                      ? "fill-accent-2 stroke-accent-2"
+                      : isEnd
+                        ? "fill-success stroke-success"
+                        : "fill-surface-alt stroke-border"
+                  } hover:stroke-danger active:cursor-grabbing`}
+                  strokeWidth={isStart || isEnd ? 3 : 2}
                   onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                   onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
                 />
@@ -207,8 +257,9 @@ export function GraphEditor({ input, onChange, weighted = false }: GraphEditorPr
         </g>
       </svg>
       <p className="mt-2 text-xs text-slate-500">
-        Click empty space to add a node · drag between nodes to connect · click a node to set it as start · drag a
-        node to move it · right-click to delete
+        Click empty space to add a node · drag between nodes to connect · click a node to set it as{" "}
+        {weighted ? "the start or end node (see toggle above)" : "start"} · drag a node to move it · right-click to
+        delete
         {weighted && " · click an edge to change its weight"}
       </p>
     </div>

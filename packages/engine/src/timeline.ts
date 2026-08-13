@@ -92,6 +92,15 @@ function applyEvent(structure: DataStructureSnapshot, event: VisualizationEvent)
     } else if (event.type === "reject-edge") {
       const edge = structure.edges.find((e) => e.id === event.edgeId);
       if (edge) edge.rejected = true;
+    } else if (event.type === "highlight-path") {
+      for (const nodeId of event.nodeIds) {
+        const node = structure.nodes.find((n) => n.id === nodeId);
+        if (node) node.onPath = true;
+      }
+      for (const edgeId of event.edgeIds) {
+        const edge = structure.edges.find((e) => e.id === edgeId);
+        if (edge) edge.onPath = true;
+      }
     }
   } else if (structure.kind === "tree") {
     if (event.type === "insert-node") {

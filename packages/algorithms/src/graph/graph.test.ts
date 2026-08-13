@@ -6,6 +6,7 @@ import {
   type GraphEdge,
   type GraphInput,
   type GraphNode,
+  type HighlightPathEvent,
   type VisitNodeEvent,
 } from "@algoviz/core";
 import { bfsPlugin } from "./bfs";
@@ -30,7 +31,14 @@ const plugins: Array<{ name: string; plugin: GraphPlugin }> = [
 // A sourceLine-tagged line should always be part of an instrumented
 // operation. See ../sorting/sorting.test.ts for the full rationale — this
 // is the graph-plugin equivalent of that drift detector.
-const OPERATION_MARKERS = ["yield", ".visitNode(", ".traverseEdge(", ".updateNodeValue(", ".rejectEdge("];
+const OPERATION_MARKERS = [
+  "yield",
+  ".visitNode(",
+  ".traverseEdge(",
+  ".updateNodeValue(",
+  ".rejectEdge(",
+  ".highlightPath(",
+];
 
 function n(id: string): GraphNode {
   return { id: nodeId(id) };
@@ -83,11 +91,27 @@ const fixtures: Fixture[] = [
   },
 ];
 
-function runPlugin(plugin: GraphPlugin, nodes: GraphNode[], edges: GraphEdge[], start: string | null) {
-  const input: GraphInput = { kind: "graph", nodes, edges, startNodeId: start ? nodeId(start) : undefined };
+function runPlugin(
+  plugin: GraphPlugin,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  start: string | null,
+  end: string | null = null,
+) {
+  const input: GraphInput = {
+    kind: "graph",
+    nodes,
+    edges,
+    startNodeId: start ? nodeId(start) : undefined,
+    endNodeId: end ? nodeId(end) : undefined,
+  };
   const graph = createInstrumentedGraph(nodes, edges);
   const engine = new ExecutionEngine();
   return engine.run(plugin.run(input, graph), graph);
+}
+
+function isHighlightPath(ev: { type: string }): ev is HighlightPathEvent {
+  return ev.type === "highlight-path";
 }
 
 describe.each(plugins)("$name", ({ plugin }) => {
@@ -231,5 +255,98 @@ describe("Prim's / Kruskal's build a correct minimum spanning tree", () => {
       const lineText = sourceLines[event.sourceLine - 1]!;
       expect(OPERATION_MARKERS.some((marker) => lineText.includes(marker))).toBe(true);
     }
+  });
+});
+
+describe("Path highlighting (endNodeId)", () => {
+  // Reuses "Dijkstra distance correctness" fixture's graph: A--1-->B--1-->D
+  // is the true shortest route to D (cost 2), beating the direct A--4-->D edge.
+  const distanceNodes: GraphNode[] = [n("A"), n("B"), n("C"), n("D")];
+  const distanceEdges: GraphEdge[] = [
+    { id: edgeId("AB"), source: nodeId("A"), target: nodeId("B"), weight: 1 },
+    { id: edgeId("BD"), source: nodeId("B"), target: nodeId("D"), weight: 1 },
+    { id: edgeId("AD"), source: nodeId("A"), target: nodeId("D"), weight: 4 },
+    { id: edgeId("BC"), source: nodeId("B"), target: nodeId("C"), weight: 10 },
+  ];
+
+  it("Dijkstra highlights the true shortest path, not the direct-but-longer edge", () => {
+    const result = runPlugin(dijkstraPlugin, distanceNodes, distanceEdges, "A", "D");
+    const highlights = result.events.filter(isHighlightPath);
+    expect(highlights).toHaveLength(1);
+    expect(highlights[0]!.nodeIds).toEqual(["A", "B", "D"]);
+    expect(highlights[0]!.edgeIds).toEqual(["AB", "BD"]);
+
+    const finalNodes = (result.finalSnapshot as { kind: "graph"; nodes: GraphNode[] }).nodes;
+    const finalEdges = (result.finalSnapshot as { kind: "graph"; edges: GraphEdge[] }).edges;
+    expect(
+      finalNodes
+        .filter((node) => node.onPath)
+        .map((node) => node.id)
+        .sort(),
+    ).toEqual(["A", "B", "D"]);
+    expect(
+      finalEdges
+        .filter((edge) => edge.onPath)
+        .map((edge) => edge.id)
+        .sort(),
+    ).toEqual(["AB", "BD"]);
+    // C sits on neither route to D (direct or via B) — must stay unhighlighted.
+    expect(finalNodes.find((node) => node.id === "C")?.onPath).toBeFalsy();
+  });
+
+  it("Dijkstra emits no highlight-path event when no end node is picked", () => {
+    const result = runPlugin(dijkstraPlugin, distanceNodes, distanceEdges, "A");
+    expect(result.events.filter(isHighlightPath)).toHaveLength(0);
+  });
+
+  it("Dijkstra emits no highlight-path event when the end node is unreachable", () => {
+    const disconnectedNodes: GraphNode[] = [n("A"), n("B"), n("X")];
+    const disconnectedEdges: GraphEdge[] = [{ id: edgeId("AB"), source: nodeId("A"), target: nodeId("B"), weight: 1 }];
+    const result = runPlugin(dijkstraPlugin, disconnectedNodes, disconnectedEdges, "A", "X");
+    expect(result.events.filter(isHighlightPath)).toHaveLength(0);
+  });
+
+  // Reuses the "Prim's/Kruskal's build a correct MST" fixture's graph: the
+  // unique MST is AB(1)+BC(2)+CD(4)+BE(5); walking that tree from A to E
+  // goes straight through B (A-B-E), never through C/D.
+  const mstNodes: GraphNode[] = [n("A"), n("B"), n("C"), n("D"), n("E")];
+  const mstEdges: GraphEdge[] = [
+    { id: edgeId("AB"), source: nodeId("A"), target: nodeId("B"), weight: 1 },
+    { id: edgeId("BC"), source: nodeId("B"), target: nodeId("C"), weight: 2 },
+    { id: edgeId("AC"), source: nodeId("A"), target: nodeId("C"), weight: 3 },
+    { id: edgeId("CD"), source: nodeId("C"), target: nodeId("D"), weight: 4 },
+    { id: edgeId("BE"), source: nodeId("B"), target: nodeId("E"), weight: 5 },
+    { id: edgeId("DE"), source: nodeId("D"), target: nodeId("E"), weight: 100 },
+  ];
+
+  it("Prim's highlights the path within its own tree (not necessarily the shortest in the original graph)", () => {
+    const result = runPlugin(primsPlugin, mstNodes, mstEdges, "A", "E");
+    const highlights = result.events.filter(isHighlightPath);
+    expect(highlights).toHaveLength(1);
+    expect(highlights[0]!.nodeIds).toEqual(["A", "B", "E"]);
+    expect(highlights[0]!.edgeIds).toEqual(["AB", "BE"]);
+  });
+
+  it("Prim's emits no highlight-path event when no end node is picked", () => {
+    const result = runPlugin(primsPlugin, mstNodes, mstEdges, "A");
+    expect(result.events.filter(isHighlightPath)).toHaveLength(0);
+  });
+
+  it("Kruskal's highlights the same tree path as Prim's for this graph, given both a start and end", () => {
+    const result = runPlugin(kruskalsPlugin, mstNodes, mstEdges, "A", "E");
+    const highlights = result.events.filter(isHighlightPath);
+    expect(highlights).toHaveLength(1);
+    expect(highlights[0]!.nodeIds).toEqual(["A", "B", "E"]);
+    expect(highlights[0]!.edgeIds).toEqual(["AB", "BE"]);
+  });
+
+  it("Kruskal's emits no highlight-path event when only an end node is picked (no start)", () => {
+    const result = runPlugin(kruskalsPlugin, mstNodes, mstEdges, null, "E");
+    expect(result.events.filter(isHighlightPath)).toHaveLength(0);
+  });
+
+  it("Kruskal's emits no highlight-path event when only a start node is picked (no end)", () => {
+    const result = runPlugin(kruskalsPlugin, mstNodes, mstEdges, "A");
+    expect(result.events.filter(isHighlightPath)).toHaveLength(0);
   });
 });

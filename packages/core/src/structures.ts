@@ -25,6 +25,15 @@ export interface GraphNode<T = unknown> {
    * assigned yet" (BFS/DFS never set this at all), not zero.
    */
   value?: number;
+  /**
+   * Persistent "part of the final highlighted start→end path" state — set
+   * by replaying a `highlight-path` event (see HighlightPathEvent). Only
+   * ever set on the handful of nodes forming that one path, once, at the
+   * very end of a Dijkstra/Prim's/Kruskal's run that had both a start and
+   * end node — everything else (BFS/DFS, or a run with no end node picked)
+   * leaves this unset, same as `value`.
+   */
+  onPath?: boolean;
 }
 
 export interface GraphEdge<T = unknown> {
@@ -38,6 +47,8 @@ export interface GraphEdge<T = unknown> {
   traversed?: boolean;
   /** Persistent "considered but excluded" state (Kruskal's: would have closed a cycle) — set by replaying a `reject-edge` event. Mutually exclusive with `traversed` in practice, but not enforced at the type level. */
   rejected?: boolean;
+  /** Persistent "part of the final highlighted start→end path" state — see GraphNode.onPath for the full explanation. */
+  onPath?: boolean;
 }
 
 /** Real graph algorithms (BFS, DFS) and GraphRenderer are implemented; the interactive editor is not yet. */

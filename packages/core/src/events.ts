@@ -101,6 +101,20 @@ export interface RejectEdgeEvent extends BaseEvent {
   edgeId: EdgeId;
 }
 
+/**
+ * Emitted once, at the very end of a Dijkstra/Prim's/Kruskal's run, only
+ * when `GraphInput.endNodeId` was set and a path to it was found — marks
+ * every node/edge on the start→end path as `onPath` (see GraphNode.onPath)
+ * so the renderer can highlight the whole path at once, distinctly from
+ * "merely visited/traversed along the way." `nodeIds`/`edgeIds` are both
+ * ordered start-to-end, though the renderer doesn't depend on that order.
+ */
+export interface HighlightPathEvent extends BaseEvent {
+  type: "highlight-path";
+  nodeIds: NodeId[];
+  edgeIds: EdgeId[];
+}
+
 // --- Tree events ------------------------------------------------------------
 
 /** Declared now for a future self-balancing tree algorithm (AVL/red-black); unused until then. */
@@ -240,7 +254,8 @@ export type VisualizationEvent =
   | LinkedListDeleteEvent
   | LinkedListReverseEvent
   | UpdateNodeValueEvent
-  | RejectEdgeEvent;
+  | RejectEdgeEvent
+  | HighlightPathEvent;
 
 /** Event types that mutate the underlying structure (relevant to timeline replay). */
 export const MUTATING_EVENT_TYPES = new Set<VisualizationEvent["type"]>([
@@ -259,6 +274,7 @@ export const MUTATING_EVENT_TYPES = new Set<VisualizationEvent["type"]>([
   "ll-reverse",
   "update-node-value",
   "reject-edge",
+  "highlight-path",
 ]);
 
 export function isMutatingEvent(event: VisualizationEvent): boolean {

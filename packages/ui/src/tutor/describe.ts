@@ -59,6 +59,8 @@ export function describeEvent(event: VisualizationEvent | null): string | undefi
       return `Deleted the node holding value ${event.value}.`;
     case "ll-reverse":
       return "Reversed the list.";
+    case "highlight-path":
+      return `Highlighted the path from ${event.nodeIds[0]} to ${event.nodeIds[event.nodeIds.length - 1]} (${event.nodeIds.length} node${event.nodeIds.length === 1 ? "" : "s"}, ${event.edgeIds.length} edge${event.edgeIds.length === 1 ? "" : "s"}).`;
   }
 }
 

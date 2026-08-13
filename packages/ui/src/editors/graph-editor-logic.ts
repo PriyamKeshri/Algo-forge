@@ -49,12 +49,13 @@ export function addEdge(input: GraphInput, sourceId: NodeId, targetId: NodeId, w
   return { ...input, edges };
 }
 
-/** Cascades: removes every edge touching this node, and clears startNodeId if it pointed here. */
+/** Cascades: removes every edge touching this node, and clears startNodeId/endNodeId if either pointed here. */
 export function deleteNode(input: GraphInput, id: NodeId): GraphInput {
   const nodes = input.nodes.filter((n) => n.id !== id);
   const edges = input.edges.filter((e) => e.source !== id && e.target !== id);
   const startNodeId = input.startNodeId === id ? undefined : input.startNodeId;
-  return { ...input, nodes, edges, startNodeId };
+  const endNodeId = input.endNodeId === id ? undefined : input.endNodeId;
+  return { ...input, nodes, edges, startNodeId, endNodeId };
 }
 
 export function deleteEdge(input: GraphInput, id: EdgeId): GraphInput {
@@ -71,6 +72,17 @@ export function setStartNode(input: GraphInput, id: NodeId): GraphInput {
   return { ...input, startNodeId: id };
 }
 
+/**
+ * Dijkstra/Prim's/Kruskal's optional path-highlight target — see
+ * GraphInput.endNodeId's doc comment. Setting a node as the end doesn't
+ * touch `startNodeId`; the two are independent (a node even being allowed
+ * to be both at once — a trivial single-node "path" — is intentional, not
+ * a case that needs guarding against here).
+ */
+export function setEndNode(input: GraphInput, id: NodeId): GraphInput {
+  return { ...input, endNodeId: id };
+}
+
 export function clearGraph(): GraphInput {
-  return { kind: "graph", nodes: [], edges: [], startNodeId: undefined };
+  return { kind: "graph", nodes: [], edges: [], startNodeId: undefined, endNodeId: undefined };
 }
