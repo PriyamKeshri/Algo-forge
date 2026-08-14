@@ -45,15 +45,6 @@ The platform combines **visualization, execution tracing, debugging, benchmarkin
 - 📊 Live operation statistics
 - 🔍 Execution state inspection
 
-### 📊 Rich Visualizations
-
-Dedicated visualization primitives for:
-
-- Arrays
-- Grids
-- Graphs
-- Trees
-- Dynamic-programming tables
 
 ### 🧮 Dynamic Programming
 
@@ -97,19 +88,6 @@ Interactive visualizations for:
 - Tries
 - Hash Tables
 
-### 🏁 Algorithm Race Mode
-
-Run multiple algorithms against the same input and compare their behavior.
-
-Example:
-
-```text
-Quick Sort        ─────────────── 42 ms
-Merge Sort        ───────────────── 49 ms
-Heap Sort         ─────────────────── 55 ms
-Insertion Sort    ───────────────────────── 812 ms
-```
-
 Compare:
 
 - Execution time
@@ -120,21 +98,6 @@ Compare:
 - Recursion depth
 - Memory usage where measurable
 - Correctness
-
-### 📈 Complexity Analysis
-
-Each algorithm provides theoretical complexity information:
-
-```text
-Quick Sort
-
-Best Case:       O(n log n)
-Average Case:    O(n log n)
-Worst Case:      O(n²)
-Space:           O(log n)
-```
-
-AlgoForge can compare theoretical complexity with observed execution behavior.
 
 ### 🤖 AI Algorithm Tutor
 
@@ -157,56 +120,6 @@ Possible interactions:
 ```
 ---
 
-# 🛠️ Tech Stack
-
-### Frontend
-
-- **React**
-- **TypeScript**
-- **Vite**
-- **Tailwind CSS**
-
-### State & UI
-
-- **Zustand**
-- **Framer Motion**
-- **Monaco Editor**
-
-### Architecture
-
-- **pnpm Workspaces**
-- **Web Workers**
-- **Event-driven execution**
-
-### Persistence
-
-- **IndexedDB**
-
-### Testing
-
-- **Vitest**
-- **React Testing Library**
-- **Playwright**
-
-### DevOps
-
-- **GitHub Actions**
-- Automated testing
-- Type checking
-- Linting
-- Production builds
-
-### AI
-
-Provider-agnostic architecture with support planned for:
-
-- Gemini
-- OpenAI
-- Anthropic
-- Ollama
-
----
-
 ## Installation
 
 Clone the repository:
@@ -224,62 +137,6 @@ pnpm install
 
 ---
 
-# 📁 Project Structure
-
-```text
-algo-forge/
-│
-├── apps/
-│   └── web/
-│       ├── src/
-│       │   ├── app/
-│       │   ├── components/
-│       │   ├── features/
-│       │   ├── hooks/
-│       │   └── routes/
-│       └── package.json
-│
-├── packages/
-│   ├── core/
-│   ├── engine/
-│   ├── algorithms/
-│   ├── visualization/
-│   ├── worker/
-│   ├── ui/
-│   ├── benchmark/
-│   └── ai/
-│
-├── docs/
-│   ├── architecture/
-│   └── PROJECT_PLAN.md
-│
-├── tests/
-│   ├── integration/
-│   └── e2e/
-│
-├── .github/
-│   └── workflows/
-│
-├── package.json
-├── pnpm-workspace.yaml
-├── pnpm-lock.yaml
-├── tsconfig.base.json
-└── README.md
-```
----
-Example:
-
-```bash
-git checkout -b feature/dijkstra-visualizer
-
-pnpm install
-pnpm test
-pnpm typecheck
-pnpm lint
-pnpm build
-```
-
----
 
 ## 📄 License
 
