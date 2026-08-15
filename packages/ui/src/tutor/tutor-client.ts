@@ -27,12 +27,11 @@ interface TutorResponseBody {
  * here — see apps/server/README.md for why the API key can't live in this
  * package (or anywhere else that ships to the browser).
  */
-export async function askTutor(question: string, context: TutorContext, endpoint = "/api/tutor"): Promise<string> {
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, context }),
-  });
+export async function askTutor(
+  question: string,
+  context: TutorContext,
+  endpoint = "https://algo-forge-h8f8.onrender.com/api/tutor"
+): Promise<string>
 
   const body: TutorResponseBody | null = await response.json().catch(() => null);
   if (!response.ok || !body?.answer) {
