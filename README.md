@@ -15,6 +15,13 @@
 
 ---
 
+## 🚀 Live Demo
+
+- **Web app:** [algo-forge.vercel.app](https://algo-forge.vercel.app/)
+- **AI Tutor backend:** [algo-forge-h8f8.onrender.com](https://algo-forge-h8f8.onrender.com/) (`apps/server` — see [Installation](#installation) for running it locally)
+
+---
+
 ## ✨ Overview
 
 **AlgoForge** is a production-oriented algorithm visualization platform designed to make algorithm execution observable and interactive.
