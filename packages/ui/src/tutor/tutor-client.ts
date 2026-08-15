@@ -30,12 +30,19 @@ interface TutorResponseBody {
 export async function askTutor(
   question: string,
   context: TutorContext,
-  endpoint = "https://algo-forge-h8f8.onrender.com/api/tutor"
-): Promise<string>
+  endpoint = "https://algo-forge-h8f8.onrender.com/api/tutor",
+): Promise<string> {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, context }),
+  });
 
   const body: TutorResponseBody | null = await response.json().catch(() => null);
+
   if (!response.ok || !body?.answer) {
     throw new Error(body?.error ?? `Tutor request failed (${response.status}).`);
   }
+
   return body.answer;
 }
