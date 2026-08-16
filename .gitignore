@@ -7,4 +7,3 @@ dist-ssr/
 .env.*
 coverage/
 *.tsbuildinfo
-.claude/
