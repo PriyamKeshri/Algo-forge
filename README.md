@@ -22,6 +22,19 @@
 
 ---
 
+## 📸 Screenshots
+
+|  |  |
+|---|---|
+| ![Home page — every algorithm grouped by category](docs/screenshots/home.png) | ![Bubble Sort mid-run — comparisons, swaps, and synced pseudocode/source](docs/screenshots/sorting.png) |
+| Home — every algorithm, grouped by category | Step-by-step playback, with synced pseudocode + source panels |
+| ![Dijkstra's shortest path highlighted on a weighted graph](docs/screenshots/graph-shortest-path.png) | ![Algorithm Race mode ranking four sort algorithms by real wall-clock time](docs/screenshots/race.png) |
+| Dijkstra — real shortest path highlighted end-to-end | Algorithm Race — four sorts, one array, real wall-clock time |
+| ![AI Tutor answering a question grounded in the current step](docs/screenshots/ai-tutor.png) | |
+| AI Tutor — grounded in the exact current step, not a generic answer | |
+
+---
+
 ## ✨ Overview
 
 **AlgoForge** is a production-oriented algorithm visualization platform designed to make algorithm execution observable and interactive.
