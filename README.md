@@ -43,6 +43,32 @@ Instead of just animating an algorithm, AlgoForge exposes *why* each step happen
 - 🏁 **Algorithm Race** — race Bubble/Insertion/Merge/Quick Sort against each other on the same array, timed in real milliseconds
 - 🤖 An AI tutor that answers questions grounded in the exact current step, not a generic explanation
 
+## 🔍 How it works
+
+Most simple visualizers hard-code an animation per algorithm. AlgoForge does the opposite: every algorithm is ordinary, real code that **narrates itself** as it runs, and literally everything else — coloring, stats, the scrubbable timeline, the AI tutor's context — is built by watching that narration.
+
+Each algorithm is a JavaScript generator that `yield`s a typed event for every meaningful operation:
+
+```ts
+function* run(arr: InstrumentedArray) {
+  for (let i = 0; i < arr.length - 1; i++) {
+    yield arr.compare(i, i + 1);      // { type: "compare", indices: [i, i+1], result: ... }
+    if (/* out of order */) {
+      yield arr.swap(i, i + 1);       // { type: "swap", indices: [i, i+1] }
+    }
+  }
+}
+```
+
+Nothing about rendering is baked into the algorithm — `arr.compare()`/`arr.swap()` both perform the real operation *and* return a small, serializable fact about what just happened. A full run produces a plain array of these events, which is all a playback needs:
+
+1. **Scrubbing stays fast at any run length.** Instead of storing a full snapshot per step (too much memory) or replaying from scratch on every scrub (too slow), AlgoForge saves ~200 keyframe snapshots across the whole run and replays only the handful of events between the nearest keyframe and wherever you scrub to.
+2. **Panels sync for free.** The pseudocode and real-source panels both just highlight whatever line the *current* event was tagged with.
+3. **The AI tutor is grounded, not generic.** Every question is answered with the exact current event, structure, and stats serialized into the prompt — so it can say what's actually happening on your screen right now.
+4. **Off the main thread.** Runs execute inside a dedicated Web Worker so a slow/pathological input never freezes the tab.
+
+It's a pnpm monorepo split along that same idea: `packages/core` (shared types), `packages/engine` (the instrumented structures + timeline/replay machinery), `packages/algorithms` (the actual generators), `packages/ui` (renderers, all generic over "whatever structure I'm handed"), and `apps/web` / `apps/server` (the app itself + the AI tutor's backend).
+
 ## 🧩 Algorithms & data structures
 
 | Category | Included |
