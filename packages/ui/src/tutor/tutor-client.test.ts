@@ -17,7 +17,7 @@ describe("askTutor", () => {
     expect(answer).toBe("Because it's the smallest tentative distance.");
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/tutor");
+    expect(url).toBe("https://algo-forge-h8f8.onrender.com/api/tutor");
     expect(JSON.parse(init.body as string)).toEqual({ question: "Why C?", context: { algorithmName: "Dijkstra" } });
   });
 
