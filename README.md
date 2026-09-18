@@ -15,7 +15,7 @@
   <br/>
   <img src="https://img.shields.io/github/stars/PriyamKeshri/Algo-forge?style=flat-square&color=F69220" alt="Stars" />
   <img src="https://img.shields.io/github/last-commit/PriyamKeshri/Algo-forge?style=flat-square&color=3178C6" alt="Last commit" />
-  <img src="https://img.shields.io/badge/license-MIT-4ade80?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/license-Apache_2.0-4ade80?style=flat-square" alt="License" />
 </p>
 
 <p>
@@ -179,8 +179,8 @@ Every question is answered with the current algorithm, pseudocode line, active s
 ## Installation
 
 ```bash
-git clone https://github.com/PriyamKeshri/algo-forge.git
-cd algo-forge
+git clone https://github.com/PriyamKeshri/Algo-forge.git
+cd Algo-forge
 pnpm install
 pnpm dev          # web app → http://localhost:5173
 pnpm dev:all      # web app + AI Tutor backend together
